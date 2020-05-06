@@ -1,0 +1,361 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+		<meta name="HandheldFriendly" content="true" />
+		<meta name="MobileOptimized" content="320" />
+		<title>barcode</title>
+		<script type="text/javascript" src="../js/common.js"></script>
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/holidays/y2020.js" type="text/javascript" charset="utf-8"></script>
+
+		<link rel="stylesheet" href="../css/common.css" type="text/css" charset="utf-8" />
+		<style type="text/css" media="screen">
+			.hdata {
+				color: #e1673e;
+				font-size: 14px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			#vue-id {
+				width: 100%;
+				margin: 0 auto;
+
+			}
+
+			table,
+			thead,
+			tbody,
+			tr {
+				width: 100%;
+			}
+
+			td {}
+
+			tbody td,
+			thead th {
+				position: relative;
+				text-align: left;
+				border-bottom: 1px solid #000000;
+			}
+
+			.date,
+			.value {
+				background: rgba(236, 177, 0, 0.5);
+				display: inline-block;
+				padding: 3px;
+				color: white;
+				position: absolute;
+				font-size: 10px;
+				top: 0;
+				right: 0;
+				line-height: 20px;
+			}
+
+			.value {
+				background: rgba(0, 170, 0, 0.5);
+			}
+
+			.share {
+				display: inline-block;
+				color: white;
+				padding: 10px;
+				margin-left: 20px;
+				background: #EC7600;
+				border-radius: 10px;
+			}
+
+			.sum {
+				display: inline-block;
+				color: red;
+				font-size: 40px;
+				font-style: italic;
+				font-family: "agency fb";
+			}
+
+			[v-cloak] {
+				display: none;
+			}
+		</style>
+	</head>
+	<body onload="img=document.getElementById('bimg')">
+		<br />
+		<!-- <img style="width:40%" id="bimg" src="../img/barcode.png" /> -->
+		<br />
+		<div class="button" onclick="openBarcode()">扫一扫发票</div>
+		<br />
+		<div id="vue-id" v-cloak>
+			<div v-if="list.length !== 0">
+				共计
+				<span class="sum">
+					{{list.length}}
+				</span>
+				张
+				<span class="share" @click="shareText">分享</span>
+			</div>
+			<table border="0" cellspacing="0" cellpadding="10">
+				<thead>
+					<tr>
+						<th width="15%">序列</th>
+						<th width="40%">发票代码</th>
+						<th width="40%">发票号码</th>
+						<th width="15%"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-if="list.length > 0" v-for="(item, index) in list" :key="index">
+						<td>{{index + 1}}</td>
+						<td>{{item.code}}<i v-if="item.date" class="date">
+								{{item.date}}
+							</i></td>
+						<td>{{item.num}}<i v-if="item.value" class="value">
+								{{item.value}}
+							</i></td>
+						<td>
+							<a @click="deleteItem(item.index)">删除</a>
+						</td>
+					</tr>
+					<tr v-if="list.length == 0">
+						<td colspan="4" style="text-align:center;"> 暂无内容 </td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="button button-waring" @click="clean" v-if="list.length !== 0">清空历史记录</div>
+		</div>
+		<br />
+		<div id="outpos" />
+		<div id="output">
+			电子发票扫描提供电子发票二维码扫描识别功能，支持调用摄像头即时扫描电子发票二维码，也可直接输入图片进行扫描识别。用于提取电子发票发票号码，代码，金额，日期信息。
+			支持2020年非工作日过滤，即非工作日期不能添加
+		</div>
+		<script type="text/javascript">
+			var shares = null;
+			var sweixin = null;
+			var vm = null;
+			var buttons = [{
+					title: '我的好友',
+					extra: {
+						scene: 'WXSceneSession'
+					}
+				},
+				{
+					title: '朋友圈',
+					extra: {
+						scene: 'WXSceneTimeline'
+					}
+				},
+				{
+					title: '我的收藏',
+					extra: {
+						scene: 'WXSceneFavorite'
+					}
+				}
+			];
+			// H5 plus事件处理
+			function plusReady() {
+				vm = new Vue({
+					el: '#vue-id',
+					data() {
+						return {
+							list: [],
+							headers: ["发票代码", "发票号码", "发票日期", "发票金额"]
+						}
+					},
+					mounted() {
+						console.log('mouted', plus.storage.getItem('list'))
+						this.list = JSON.parse(plus.storage.getItem('list')) || []
+						// this.list = new Array(20).fill({
+						// 	code: 12134,
+						// 	value: 121212,
+						// 	num: 121212,
+						// 	date: 20200203
+						// });
+					},
+					methods: {
+						deleteItem(index) {
+							let _this = this
+							plus.nativeUI.confirm("是否确认删除？", function(i) {
+								if (i.index == 0) {
+									_this.list.splice(index, 1);
+									_this.updateLocal();
+								}
+							}, '', ['删除', '取消']);
+						},
+						clean() {
+							let _this = this
+							plus.nativeUI.confirm("是否确认清空？", function(i) {
+								if (i.index == 0) {
+									_this.list = []
+									_this.updateLocal();
+								}
+							}, '', ['清空', '取消']);
+						},
+						updateLocal() {
+							console.log('setItem')
+							plus.storage.setItem('list', JSON.stringify(this.list));
+						},
+						// 分享文本
+						shareText() {
+							let content = this.headers.join(";") + '\n'
+							for (let i = 0; i < this.list.length; i++) {
+								content += (this.list[i].code + ';' +
+									this.list[i].num + ';' +
+									(this.list[i].date || "") + ';' +
+									(this.list[i].value || "") + '\n')
+							}
+							let msg = {
+								type: 'text',
+								content: content
+							};
+							sweixin ? plus.nativeUI.actionSheet({
+								title: '分享文本到微信',
+								cancel: '取消',
+								buttons: buttons
+							}, function(e) {
+								(e.index > 0) && share(sweixin, msg, buttons[e.index - 1]);
+							}) : plus.nativeUI.alert('当前环境不支持微信分享操作!');
+						}
+
+					}
+				})
+				updateSerivces();
+			}
+			if (window.plus) {
+				plusReady();
+			} else {
+				document.addEventListener('plusready', plusReady, false);
+			}
+			/**
+			 * 更新分享服务
+			 */
+			function updateSerivces() {
+				plus.share.getServices(function(s) {
+					shares = {};
+					for (var i in s) {
+						var t = s[i];
+						shares[t.id] = t;
+					}
+					sweixin = shares['weixin'];
+				}, function(e) {
+					outSet('获取分享服务列表失败：' + e.message);
+				});
+			}
+
+			// 分享
+			function share(srv, msg, button) {
+				outSet('分享操作：');
+				if (!srv) {
+					outLine('无效的分享服务！');
+					return;
+				}
+				button && (msg.extra = button.extra);
+				// 发送分享
+				if (srv.authenticated) {
+					outLine('---已授权---');
+					doShare(srv, msg);
+				} else {
+					outLine('---未授权---');
+					srv.authorize(function() {
+						doShare(srv, msg);
+					}, function(e) {
+						outLine('认证授权失败：' + JSON.stringify(e));
+					});
+				}
+			}
+			// 发送分享
+			function doShare(srv, msg) {
+				outLine(JSON.stringify(msg));
+				srv.send(msg, function() {
+					outLine('分享到"' + srv.description + '"成功！');
+				}, function(e) {
+					outLine('分享到"' + srv.description + '"失败: ' + JSON.stringify(e));
+				});
+			}
+			// 解除授权
+			function cancelAuth() {
+				outSet('解除授权：');
+				if (sweixin) {
+					if (sweixin.authenticated) {
+						outLine('取消"' + sweixin.description + '"');
+					}
+					sweixin.forbid();
+				} else {
+					outLine('当前环境不支持微信分享操作!');
+				}
+			}
+
+			/** 是否是电子发票 */
+			function isElec(eleString) {
+				console.log('!eleString', !eleString)
+				if (!eleString) {
+					return false;
+				}
+				var elearr = eleString.split(',');
+				console.log('elearr', elearr)
+				if (elearr.length >= 4 && elearr[2].length == 12 && elearr[3].length == 8) {
+					return true;
+				}
+				return false;
+			}
+			/**
+			 * 扫描结果转换成电子发票对象
+			 * @param {Object} eleString
+			 */
+			function eleStr2Obj(eleString) {
+				var tmpElearr = eleString.split(',');
+				return {
+					code: tmpElearr[2], // 发票代码
+					num: tmpElearr[3], // 发票号码
+					value: tmpElearr[4], // 发票金额
+					date: tmpElearr[5] // 发票日期
+				}
+			}
+
+			function scaned(t, r, f) {
+				var eleObj = eleStr2Obj(r);
+				console.log('jieguo', r, 'typeof r:', typeof r)
+				if (t != 'QR' || (t == 'QR' && !isElec(r))) {
+					return plus.nativeUI.alert("非电子发票，请重新扫描");
+				}
+				if (eleObj.date && y2020.indexOf(eleObj.date) > -1) {
+					return plus.nativeUI.alert(`发票日期${eleObj.date}为非工作日，发票不可用`);
+				}
+				let index = vm.$data.list.find((item) => {
+					return item.code == eleObj.code && item.num == eleObj.num;
+				})
+				if (index) {
+					return plus.nativeUI.alert("电子发票已存在，不能重复添加");
+				}
+				vm.$data.list.push(eleStr2Obj(r));
+				vm.updateLocal();
+				update(eleObj)
+			}
+
+			function update(eleStr2Obj, blist) {
+				outSet(`扫描发票成功：代码:${eleStr2Obj.code}，号码：${eleStr2Obj.num}，金额：${eleStr2Obj.value}，日期：${eleStr2Obj.date}`);
+			}
+
+			// 打开二维码扫描界面 
+			function openBarcode() {
+				createWithoutTitle('barcode_scan.html', {
+					titleNView: {
+						type: 'float',
+						backgroundColor: 'rgba(215,75,40,0.3)',
+						titleText: '扫一扫电子发票',
+						titleColor: '#FFFFFF',
+						autoBackButton: true,
+						buttons: [{
+							fontSrc: '_www/helloh5.ttf',
+							text: '\ue302',
+							fontSize: '18px',
+							onclick: 'javascript:scanPicture()'
+						}]
+					}
+				});
+			}
+		</script>
+	</body>
+</html>

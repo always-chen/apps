@@ -63,7 +63,7 @@
 						titleColor: '#CCCCCC'
 					}
 				};
-				t && (ws.titleNView.titleText = t, d || (d = t.toLowerCase()));
+				t && (ws.titleNView.titleText = t);
 				d && (ws.titleNView.buttons = [{
 					fontSrc: '_www/helloh5.ttf',
 					text: '\ue301',
@@ -148,6 +148,11 @@
 			<li id="plus/barcode.html" onclick="clicked(this.id, '电子发票扫描', 'barcode')">
 				<span class="item">电子发票扫描
 					<div class="chs">扫描统计电子发票代码，号码，金额，日期信息</div>
+				</span>
+			</li>
+			<li id="plus/code.html" onclick="clicked(this.id, '二维码扫描')">
+				<span class="item">二维码信息查看
+					<div class="chs">扫描二维码，将信息可视化</div>
 				</span>
 			</li>
 		</ul>

@@ -221,13 +221,14 @@
                 "push" : {},
                 "share" : {
                     "weixin" : {
-                        "appid" : "",
+                        "appid" : "wxa3722f32b9f56872",
                         "UniversalLinks" : ""
                     }
                 },
                 "payment" : {},
                 "oauth" : {},
-                "speech" : {}
+                "speech" : {},
+                "ad" : {}
             }
         }
     },

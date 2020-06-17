@@ -161,7 +161,7 @@
 					data() {
 						return {
 							list: [],
-							headers: ["发票代码", "发票号码", "发票日期", "发票金额"]
+							headers: ["发票代码", "发票号码", "发票日期", "发票金额","校验码","校验码后6位"]
 						}
 					},
 					mounted() {
@@ -204,7 +204,10 @@
 								content += (this.list[i].code + ';' +
 									this.list[i].num + ';' +
 									(this.list[i].date || "") + ';' +
-									(this.list[i].value || "") + '\n')
+									(this.list[i].value || "") +';' +
+									(this.list[i].vCode || "") +';' +
+									(this.list[i].vCode || "").substr((this.list[i].vCode || "").length-6) +';' +
+									 '\n')
 							}
 							let msg = {
 								type: 'text',
@@ -306,11 +309,14 @@
 			 */
 			function eleStr2Obj(eleString) {
 				var tmpElearr = eleString.split(',');
+				var taxRay = 0.13 // 税率13%
+				var tmpNum = taxRay * parseFloat(tmpElearr[4])
 				return {
 					code: tmpElearr[2], // 发票代码
 					num: tmpElearr[3], // 发票号码
 					value: tmpElearr[4], // 发票金额
-					date: tmpElearr[5] // 发票日期
+					date: tmpElearr[5], // 发票日期
+					vCode: tmpElearr[6] // 校验码
 				}
 			}
 

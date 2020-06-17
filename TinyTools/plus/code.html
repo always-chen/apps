@@ -102,7 +102,7 @@
 					<tr v-if="list.length > 0" v-for="(item, index) in list" :key="index">
 						<td>{{item}}</td>
 						<td>
-							<a @click="deleteItem(item.index)">删除</a>
+							<a @click="deleteItem(index)">删除</a>
 						</td>
 					</tr>
 					<tr v-if="list.length == 0">

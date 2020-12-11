@@ -625,6 +625,8 @@ public class MainActivity extends Activity implements ActivityCompat.OnRequestPe
         ExcelUtils.initExcel(file.toString() + "/电子发票.xls", title);
         fileName = getSDPath() + "/Record/电子发票.xls";
         ExcelUtils.writeObjListToExcel(getRecordData(), fileName, this);
+        // 分享到微信
+        ShareUtils.shareWechatFriend(this, new File(fileName));
     }
 
     /**
